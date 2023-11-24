@@ -31,10 +31,27 @@ const createUser = async (req: Request, res: Response) => {
   }
 };
 
+const getAllUser = async (req: Request, res: Response) => {
+  const allUser = await createUserService.getAllUserFromDB();
+  try {
+    res.status(200).json({
+      success: true,
+      message: "Users fetched successfully!",
+      data: allUser,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Something was wrong",
+      data: allUser,
+    });
+  }
+};
+
 // Helper function to remove the password field
 function removePasswordField(user: IUser): Omit<IUser, "password"> {
   const { password, ...userWithoutPassword } = user;
   return userWithoutPassword;
 }
 
-export const userController = { createUser };
+export const userController = { createUser, getAllUser };

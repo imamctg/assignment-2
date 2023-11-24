@@ -6,4 +6,20 @@ const createUserIntoDB = async (user: IUser) => {
   return result;
 };
 
-export const createUserService = { createUserIntoDB };
+const getAllUserFromDB = async () => {
+  const allUser = UserModels.aggregate([
+    {
+      $project: {
+        _id: 0,
+        username: 1,
+        fullName: 1,
+        age: 1,
+        email: 1,
+        address: 1,
+      },
+    },
+  ]);
+  return allUser;
+};
+
+export const createUserService = { createUserIntoDB, getAllUserFromDB };
