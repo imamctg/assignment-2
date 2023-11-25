@@ -61,6 +61,5 @@ export const createUserService = {
   singleUserFromDB,
   UserService,
   deleteUserFromDB,
-
   createOrderIntoDB,
 };
