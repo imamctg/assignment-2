@@ -2,6 +2,18 @@ import { Schema, model } from "mongoose";
 import { IUser, UserModel } from "./user.interface";
 import bcrypt from "bcrypt";
 import config from "../../config";
+import { Document, Model } from "mongoose";
+
+// Interface for user model (includes both document and static methods)
+export interface UsersModel extends Model<UserDocument> {
+  // Add any static methods if needed
+}
+
+// Interface for user document (instance methods)
+export interface UserDocument extends Document {
+  isUserExist(id: string): Promise<UserDocument | null>;
+  // Add any other instance methods if needed
+}
 
 const userSchema = new Schema<IUser, UserModel>({
   userId: { type: Number, required: true, unique: true },

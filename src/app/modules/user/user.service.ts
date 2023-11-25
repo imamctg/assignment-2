@@ -1,5 +1,5 @@
 import { IUser } from "./user.interface";
-import { UserModels } from "./user.model";
+import { UserDocument, UserModels } from "./user.model";
 
 const createUserIntoDB = async (user: IUser) => {
   const result = await UserModels.create(user);
@@ -22,4 +22,45 @@ const getAllUserFromDB = async () => {
   return allUser;
 };
 
-export const createUserService = { createUserIntoDB, getAllUserFromDB };
+const singleUserFromDB = async (userId: number) => {
+  const singleUser = await UserModels.findOne({ userId }, { password: 0 });
+  return singleUser;
+};
+
+const UserService = async (
+  userId: number,
+  updatedUserData: Partial<UserDocument>
+) => {
+  const user = await UserModels.findOneAndUpdate(
+    { userId },
+    { $push: { article: updatedUserData } },
+    {
+      new: true,
+    }
+  );
+  return user;
+};
+
+const deleteUserFromDB = async (userId: number) => {
+  const deleteUser = await UserModels.findOneAndDelete({ userId });
+  return deleteUser;
+};
+
+const createOrderIntoDB = async (userId: number, newOrder: any) => {
+  const orders = await UserModels.findOneAndUpdate(
+    { userId },
+    { newOrder },
+    { new: true }
+  );
+  return orders;
+};
+
+export const createUserService = {
+  createUserIntoDB,
+  getAllUserFromDB,
+  singleUserFromDB,
+  UserService,
+  deleteUserFromDB,
+
+  createOrderIntoDB,
+};
