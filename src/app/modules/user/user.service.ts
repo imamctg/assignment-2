@@ -13,6 +13,7 @@ const getAllUserFromDB = async () => {
     {
       $project: {
         _id: 0,
+        userId: 1,
         username: 1,
         fullName: 1,
         age: 1,

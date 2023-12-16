@@ -120,7 +120,6 @@ const getAllOrder = async (req: Request, res: Response) => {
   const { userId } = req.params;
   const id = Number(userId);
   const allUser = await createUserService.getAllOrderFromDB(id);
-  console.log(allUser, "d");
   if (allUser.length === 0) {
     res.status(404).json({
       success: false,
