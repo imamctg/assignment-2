@@ -15,8 +15,10 @@ app.use(cors());
 // application routes
 app.use("/api/users", UserRoutes);
 
-app.post("/", (req: Request, res: Response) => {
-  res.send("Hello World!");
+app.get("/", (req: Request, res: Response) => {
+  res.send(
+    "Welcome Examiner of  <b>Programming Hero!</b><br> I know you are checking this route.<br> Please check this Assignment-2 <br>Thank you"
+  );
 });
 
 export default app;

@@ -1,23 +1,11 @@
 import { Schema, model } from "mongoose";
-import { IUser, UserModel } from "./user.interface";
+import { IUser } from "./user.interface";
 import bcrypt from "bcrypt";
 import config from "../../config";
-import { Document, Model } from "mongoose";
 
-// Interface for user model (includes both document and static methods)
-export interface UsersModel extends Model<UserDocument> {
-  // Add any static methods if needed
-}
-
-// Interface for user document (instance methods)
-export interface UserDocument extends Document {
-  isUserExist(id: string): Promise<UserDocument | null>;
-  // Add any other instance methods if needed
-}
-
-const userSchema = new Schema<IUser, UserModel>({
+const userSchema = new Schema<IUser>({
   userId: { type: Number, required: true, unique: true },
-  username: { type: String, required: true, unique: true },
+  username: { type: String, unique: true, required: false },
   password: {
     type: String,
     required: true,
@@ -27,7 +15,7 @@ const userSchema = new Schema<IUser, UserModel>({
     firstName: { type: String, required: true },
     lastName: { type: String, required: true },
   },
-  age: { type: String },
+  age: { type: Number },
   email: { type: String },
   isActive: { type: Boolean },
   hobbies: {
@@ -48,14 +36,13 @@ const userSchema = new Schema<IUser, UserModel>({
   ],
 });
 
-// creating a custom instance method
-userSchema.methods.isUserExist = async function (id: string) {
-  const existingUser = await UserModels.findOne({ id });
-  return existingUser;
+// Custom static method to check if a user exists by ID
+userSchema.statics.doesUserExistById = async function (userId) {
+  const user = await this.findOne({ userId });
+  return !!user;
 };
 
 userSchema.pre("save", async function (next) {
-  // console.log(this, 'Pre hook: We are working before')
   // eslint-disable-next-line @typescript-eslint/no-this-alias
   const user = this;
   // hasing password and save into DB
@@ -66,4 +53,9 @@ userSchema.pre("save", async function (next) {
   next();
 });
 
-export const UserModels = model<IUser, UserModel>("UserModel", userSchema);
+userSchema.set("toJSON", {
+  transform: function (doc, ret) {
+    delete ret.password;
+  },
+});
+export const UserModels = model<IUser>("UserModels", userSchema);

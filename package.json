@@ -8,7 +8,8 @@
     "start-dev": "node ./dist/server.js",
     "start-nodemon": "nodemon ./dist/server.js",
     "lint": "eslint src --ignore-path .eslintignore --ext .ts",
-    "compile": "ts-node-dev --respawn --transpile-only ./src/server.ts"
+    "compile": "ts-node-dev --respawn --transpile-only ./src/server.ts",
+    "build": "tsc"
   },
   "keywords": [],
   "author": "",
@@ -22,7 +23,8 @@
     "express": "^4.18.2",
     "joi": "^17.11.0",
     "mongoose": "^8.0.1",
-    "validator": "^13.11.0"
+    "validator": "^13.11.0",
+    "zod": "^3.22.4"
   },
   "devDependencies": {
     "@types/bcrypt": "^5.0.2",

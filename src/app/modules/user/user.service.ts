@@ -1,5 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { IUser } from "./user.interface";
-import { UserDocument, UserModels } from "./user.model";
+import { UserModels } from "./user.model";
 
 const createUserIntoDB = async (user: IUser) => {
   const result = await UserModels.create(user);
@@ -19,26 +21,64 @@ const getAllUserFromDB = async () => {
       },
     },
   ]);
+
   return allUser;
 };
 
 const singleUserFromDB = async (userId: number) => {
-  const singleUser = await UserModels.findOne({ userId }, { password: 0 });
+  const singleUser = await UserModels.aggregate([
+    { $match: { userId } },
+    {
+      $project: {
+        _id: 0,
+        userId: 1,
+        username: 1,
+        fullName: 1,
+        age: 1,
+        email: 1,
+        isActive: 1,
+        hobbies: 1,
+        address: 1,
+      },
+    },
+  ]);
+
   return singleUser;
 };
 
-const UserService = async (
-  userId: number,
-  updatedUserData: Partial<UserDocument>
-) => {
-  const user = await UserModels.findOneAndUpdate(
+const updateUserIntoDb = async (userId: number, payload: Partial<IUser>) => {
+  const { fullName, hobbies, address, ...remainingUserData } = payload;
+
+  const modifiedUpdatedData: Record<string, unknown> = {
+    ...remainingUserData,
+  };
+
+  if (fullName && Object.keys(fullName).length) {
+    for (const [key, value] of Object.entries(fullName)) {
+      modifiedUpdatedData[`fullName.${key}`] = value;
+    }
+  }
+
+  if (hobbies && Object.keys(hobbies).length) {
+    for (const [key, value] of Object.entries(hobbies)) {
+      modifiedUpdatedData[`hobbies.${key}`] = value;
+    }
+  }
+  if (address && Object.keys(address).length) {
+    for (const [key, value] of Object.entries(address)) {
+      modifiedUpdatedData[`address.${key}`] = value;
+    }
+  }
+  const result = await UserModels.findOneAndUpdate(
     { userId },
-    { $push: { article: updatedUserData } },
+    modifiedUpdatedData,
     {
       new: true,
+      runValidators: true,
     }
   );
-  return user;
+
+  return result;
 };
 
 const deleteUserFromDB = async (userId: number) => {
@@ -46,20 +86,72 @@ const deleteUserFromDB = async (userId: number) => {
   return deleteUser;
 };
 
-const createOrderIntoDB = async (userId: number, newOrder: any) => {
-  const orders = await UserModels.findOneAndUpdate(
-    { userId },
-    { newOrder },
-    { new: true }
-  );
-  return orders;
+const createOrderIntoDB = async (userId: number, payload: Partial<IUser>) => {
+  const finduser = await UserModels.findOne({ userId });
+
+  for (const key in finduser) {
+    const order = await UserModels.findOneAndUpdate(
+      { userId },
+      { $addToSet: { orders: payload } },
+      {
+        new: true,
+        _id: false,
+      }
+    );
+    return order;
+  }
 };
 
+const getAllOrderFromDB = async (userId: number) => {
+  const order = await UserModels.aggregate([
+    { $match: { userId: userId } },
+    { $project: { orders: 1, _id: 0 } },
+  ]);
+
+  return order;
+};
+
+const calculateTotalPriceByUser = async (userId: number) => {
+  const orders = await UserModels.aggregate([
+    { $match: { userId: +userId } }, // Match documents with the specified userId
+    {
+      $project: {
+        _id: 0, // Exclude the _id field
+        orders: {
+          $map: {
+            input: "$orders",
+            as: "order",
+            in: {
+              totalPrice: {
+                $sum: {
+                  $multiply: ["$$order.price", "$$order.quantity"],
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  ]);
+
+  if (orders.length === 0) {
+    return orders;
+  } else {
+    // Extract the 'totalPrice' values and sum them
+    const totalSum = orders[0].orders.reduce(
+      (sum: number, order: any) => sum + order.totalPrice,
+      0
+    );
+    return totalSum;
+  }
+};
 export const createUserService = {
   createUserIntoDB,
   getAllUserFromDB,
   singleUserFromDB,
-  UserService,
+  updateUserIntoDb,
   deleteUserFromDB,
   createOrderIntoDB,
+  getAllOrderFromDB,
+  calculateTotalPriceByUser,
 };

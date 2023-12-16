@@ -1,30 +1,22 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Request, Response } from "express";
 import { createUserService } from "./user.service";
-import joyvalidationSchema from "./user.validation";
-import { IUser } from "./user.interface";
+import { userValidation } from "./user.validation";
 
 const createUser = async (req: Request, res: Response) => {
   try {
-    const { user } = req.body;
-    const { error, value } = joyvalidationSchema.validate(user);
+    const result = await createUserService.createUserIntoDB(req.body);
 
-    // It will call service funciton to send data
-    const result = await createUserService.createUserIntoDB(value);
-
-    // Respond with the user details excluding the password field
-    const userWithoutPassword = removePasswordField(result.toObject());
-
-    // response data
     res.status(200).json({
       success: true,
       message: "User created successfully",
-      data: userWithoutPassword,
+      data: result,
     });
-  } catch (err: any) {
-    res.status(500).json({
+  } catch (error) {
+    res.status(400).json({
       success: false,
-      message: err.message || "Something was wrong",
-      error: err,
+      message: "User already exist",
+      error: { code: 400, description: "User already exist!" },
     });
   }
 };
@@ -46,102 +38,123 @@ const getAllUser = async (req: Request, res: Response) => {
   }
 };
 
-const getSingleUser = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const userId = req.params.userId;
-
-    const singleUserInfo = await createUserService.singleUserFromDB(userId);
-    // Checking user exists using a static method
-    if (!singleUserInfo) {
-      res.status(404).json({
-        success: false,
-        message: "User not found",
-        error: [404, "description: User not found"],
-      });
-    }
+const getSingleUser = async (req: Request, res: Response) => {
+  const { userId } = req.params;
+  const id = Number(userId);
+  const singleUserInfo = await createUserService.singleUserFromDB(id);
+  if (singleUserInfo.length === 0) {
+    res.status(404).json({
+      success: false,
+      message: "User not found",
+      error: { code: 404, description: "User not found!" },
+    });
+  } else {
     res.status(200).json({
       success: true,
       message: "User fetched successfully!",
       data: singleUserInfo,
     });
-  } catch (error) {
+  }
+};
+
+const updateUserInfo = async (req: Request, res: Response) => {
+  const { userId } = req.params;
+  const id = Number(userId);
+  const result = await createUserService.updateUserIntoDb(id, req.body);
+  if (result === null) {
     res.status(404).json({
       success: false,
       message: "User not found",
-      error: [404, "description: User not found"],
+      error: { code: 404, description: "User not found!" },
+    });
+  } else {
+    res.status(200).json({
+      success: true,
+      message: "User updated successfully!",
+      data: result,
     });
   }
 };
 
-const updateUserInfo = async (req: Request, res: Response): Promise<void> => {
-  const userId: number = parseInt(req.params.userId);
-  const updatedUserData = req.body;
-
-  const result = await createUserService.UserService(userId, updatedUserData);
-  res.status(200).json({
-    success: true,
-    data: updatedUserData,
-  });
-  res.status(400).json({
-    success: false,
-    data: result,
-  });
-};
-
-const deleteSingleUser = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const userId = req.params.userId;
-    const deleteUserFromDB = await createUserService.deleteUserFromDB(userId);
-    if (!deleteUserFromDB) {
-      res.status(400).json({
-        success: false,
-        message: "User not found",
-        error: [404, "description: User not found"],
-      });
-    }
+const deleteSingleUser = async (req: Request, res: Response) => {
+  const { userId } = req.params;
+  const id = Number(userId);
+  const deleteUserFromDB = await createUserService.deleteUserFromDB(id);
+  if (!deleteUserFromDB) {
+    res.status(404).json({
+      success: false,
+      message: "User not found",
+      error: { code: 404, description: "User not found!" },
+    });
+  } else {
     res.status(200).json({
       success: true,
       message: "User deleted successfully!",
-      data: deleteUserFromDB,
-    });
-  } catch (error) {
-    res.status(400).json({
-      success: false,
-      message: "user not found to delete",
-      err: error,
+      data: null,
     });
   }
 };
 
 const createOrder = async (req: Request, res: Response) => {
-  try {
-    const userId = req.params.userId;
-    const { orders } = req.body;
-    console.log(orders);
-    const { error, value } = joyvalidationSchema.validate(orders);
-    console.log(error, value);
-
-    // It will call service funciton to send data
-    const result = await createUserService.createOrderIntoDB(userId, orders);
+  const { userId } = req.params;
+  const id = Number(userId);
+  const orderValidate: any = userValidation.orderSchema.validate(req.body);
+  const { value } = orderValidate;
+  const order = await createUserService.createOrderIntoDB(id, value);
+  if (!order) {
+    res.status(404).json({
+      success: false,
+      message: "User not found",
+      error: { code: 404, description: "User not found!" },
+    });
+  } else {
     res.status(200).json({
       success: true,
-      message: "Order create successfully",
-      data: result,
-    });
-  } catch (error) {
-    res.status(400).json({
-      success: false,
-      data: error,
+      message: "Order created successfully!",
+      data: null,
     });
   }
 };
 
-//Helper function to remove the password field
+const getAllOrder = async (req: Request, res: Response) => {
+  const { userId } = req.params;
+  const id = Number(userId);
+  const allUser = await createUserService.getAllOrderFromDB(id);
+  console.log(allUser, "d");
+  if (allUser.length === 0) {
+    res.status(404).json({
+      success: false,
+      message: "User not found",
+      error: { code: 404, description: "User not found!" },
+    });
+  } else {
+    res.status(200).json({
+      success: true,
+      message: "Order fetched successfully!",
+      data: allUser,
+    });
+  }
+};
 
-function removePasswordField(user: IUser): Omit<IUser, "password"> {
-  const { password, ...userWithoutPassword } = user;
-  return userWithoutPassword;
-}
+const calculateTotalPrice = async (req: Request, res: Response) => {
+  const { userId } = req.params;
+  const id = Number(userId);
+  const result = await createUserService.calculateTotalPriceByUser(id);
+
+  if (result.length === 0) {
+    res.status(400).json({
+      success: false,
+      message: "User not found",
+      error: { code: 404, description: "User not found!" },
+    });
+  } else {
+    res.status(200).json({
+      success: true,
+      message: "Total price calculated successfully!",
+      data: { totalPrice: result },
+    });
+  }
+};
 
 export const userController = {
   createUser,
@@ -150,4 +163,6 @@ export const userController = {
   updateUserInfo,
   deleteSingleUser,
   createOrder,
+  getAllOrder,
+  calculateTotalPrice,
 };

@@ -1,14 +1,15 @@
+import { Document } from "mongoose";
 import { Model } from "mongoose";
 
 export type IUser = {
   userId: number;
-  username: string;
+  username?: string;
   password: string;
   fullName: {
     firstName: string;
     lastName: string;
   };
-  age: string;
+  age?: number;
   email: string;
   isActive: boolean;
   hobbies: string[];
@@ -26,9 +27,9 @@ export type IUser = {
   ];
 };
 
-// custom instance method
-export type UserMethods = {
-  isUserExist(id: string): Promise<IUser | null>;
-};
+// Define the interface for the user document methods (instance methods)
+export interface UserDocument extends Document {
+  isUserExist(id: number): Promise<UserDocument | null>;
+}
 
-export type UserModel = Model<IUser, Record<string, never>, UserMethods>;
+export interface UsersModel extends Model<UserDocument> {}
